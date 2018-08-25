@@ -1,0 +1,22 @@
+{
+    "name": "jkliru/sockets",
+    "description": "Check-braces through sockets",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Sergey Cheglakov",
+            "email": "admin@jkli.ru"
+        }
+    ],
+    "require": {
+        "php": ">=7.2",
+        "jkliru/check-braces": "^0.1.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "jkliru\\": "src"
+        }
+    }
+}
+

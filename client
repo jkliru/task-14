@@ -1,0 +1,36 @@
+#!/usr/bin/env php
+<?php
+
+require 'vendor/autoload.php';
+
+use jkliru\Sockets\Socket;
+use jkliru\Sockets\ClientConnection;
+
+$params = getopt('', ['address::', 'port::', 'message::']);
+
+$port = $params['port'] ?? 9999;
+$address = $params['address'] ?? '127.0.0.1';
+$message = $params['message'] ?? "(()))";
+
+try {
+    $socket = new Socket(AF_INET, SOCK_STREAM, SOL_TCP);
+
+    $connection = (new ClientConnection($socket->getSocket(), $address, $port))
+        ->getConnection();
+
+    $message .= "\n";
+
+    $socket->write($message);
+
+    $answer = '';
+    while ('' !== $line = $socket->read()) {
+        $answer .= $line;
+    }
+
+    echo $answer . PHP_EOL;
+
+    $socket->close();
+}
+catch (\Exception $e) {
+    echo "Error occured: {$e->getMessage()}" . PHP_EOL;
+}

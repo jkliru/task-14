@@ -1,0 +1,59 @@
+#!/usr/bin/env php
+<?php
+
+require 'vendor/autoload.php';
+
+use jkliru\Sockets\Socket;
+use jkliru\Sockets\ServerConnection;
+use CheckBraces\CheckBraces;
+
+$params = getopt('', ['address::', 'port::', 'threads::']);
+
+$port = $params['port'] ?? 9999;
+$address = $params['address'] ?? '127.0.0.1';
+$threads = $params['threads'] ?? 1;
+
+$socket = (new Socket(AF_INET, SOCK_STREAM, SOL_TCP))
+    ->setOption(SOL_SOCKET, SO_REUSEADDR, 1)
+    ->bind($address, $port)
+    ->listen();
+
+$checkBraces = new CheckBraces;
+
+for ($i = 0; $i < $threads; $i++) {
+    $pid = pcntl_fork();
+
+    if ($pid === 0) {
+        while(true) {
+            $connection = new ServerConnection($socket->getSocket());
+            echo "Accept connection" . PHP_EOL;
+
+            $message = 'Hello from ' . posix_getpid() . ' process' . PHP_EOL;
+            $connection->write($message);
+
+            $command = trim($connection->read());
+
+            echo "Received command [" . $command . "]" . PHP_EOL . PHP_EOL;
+
+            try {
+                $stringIsCorrect = $checkBraces->isCorrectString($command);
+
+                $message = "string '$command' is " . ($stringIsCorrect ? 'correct' : 'NOT correct') . PHP_EOL;
+            }
+            catch (\Exception $e) {
+                $message = "string '$command' contains illegal characters" . PHP_EOL;
+            }
+
+            $connection->write($message);
+
+            $connection->close();
+        }
+    }
+}
+
+while (($cid = pcntl_waitpid(0, $status)) !== -1) {
+    $exitcode = pcntl_wexitstatus($status);
+    echo "Child $cid exited with status $exitcode" . PHP_EOL;
+}
+
+$socket->close();
